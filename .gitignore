@@ -1,0 +1,14 @@
+# Security & Env
+.env
+
+# Python cache & virtualenv
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# PyCharm
+.idea/
+
+# Local DB storage
+qdrant_storage/

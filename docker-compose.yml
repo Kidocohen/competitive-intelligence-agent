@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  agent-api:
+    build: .
+    container_name: competitive_intelligence_agent
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  agent-ui:
+    build: .
+    container_name: competitive_intelligence_ui
+    command: streamlit run streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
+    environment:
+      - API_HOST=agent-api
+    env_file:
+      - .env
+    depends_on:
+      - agent-api
+    restart: unless-stopped
