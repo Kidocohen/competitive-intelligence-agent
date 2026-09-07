@@ -5,12 +5,19 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# התקנת תלויות מערכת בסיסיות (עוזר למנוע תקלות קומפילציה ברכיבי רשת)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# חשיפת פורט ה-API (Flask) ופורט ממשק המשתמש (Streamlit)
 EXPOSE 5000
+EXPOSE 8501
 
 CMD ["python", "src/app.py"]
