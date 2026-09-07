@@ -6,12 +6,12 @@ from langchain_openai import OpenAIEmbeddings
 
 N8N_WEBHOOK_URL = os.getenv(
     "N8N_WEBHOOK_URL",
-    "http://localhost:5678/webhook/market-intelligence"
+    "http://n8n_local:5678/webhook/market-intelligence"
 )
 
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", None)
-COLLECTION_NAME = "competitor_intelligence"
+COLLECTION_NAME = "competitive_intelligence"
 
 
 @tool
@@ -67,3 +67,7 @@ def external_market_feed_tool(company: str, query: str = "Market Analysis") -> s
         return f"n8n webhook returned status code: {response.status_code}"
     except Exception as e:
         return f"Failed to contact n8n external service: {str(e)}"
+
+
+# הגדרת הרשימה ש-graph.py מחפש לייבא
+system_tools = [search_internal_intelligence, external_market_feed_tool]

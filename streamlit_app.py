@@ -2,35 +2,54 @@ import os
 import requests
 import streamlit as st
 
-st.set_page_config(page_title="Competitive Intelligence Agent", layout="wide")
+st.set_page_config(
+    page_title="Competitive Intelligence Agent",
+    page_icon="🔍",
+    layout="wide"
+)
+
+# כתובת ה-API: תמיכה בשם השירות בדוקר עם נפילה ל-localhost
+API_URL = os.getenv("API_URL", "http://competitive_intelligence_agent:5000/api/research")
 
 st.title("Competitive Intelligence Agent")
 st.caption("LangGraph Multi-Agent Engine with Vector Search & REST API")
 
-user_query = st.text_area(
+# שדה הזנת השאילתה
+user_prompt = st.text_area(
     "Enter Intelligence Directive:",
-    placeholder="e.g., What are the main risks associated with BetaTech?"
+    value="What are the primary weaknesses and deployment risks of EpsilonAutomate?",
+    height=120
 )
 
-if st.button("Run Analysis"):
-    if not user_query.strip():
-        st.warning("Please enter a directive.")
+# כפתור הפעלה
+if st.button("Run Analysis", type="primary"):
+    if not user_prompt.strip():
+        st.warning("Please enter a valid intelligence directive.")
     else:
-        with st.spinner("Analyzing intelligence data..."):
+        with st.spinner("Agent is gathering intelligence and synthesizing report..."):
             try:
-                api_host = os.getenv("API_HOST", "localhost")
-                api_url = f"http://{api_host}:5000/api/research"
-
                 response = requests.post(
-                    api_url,
-                    json={"query": user_query}
+                    API_URL,
+                    json={"query": user_prompt},
+                    timeout=120
                 )
+
                 if response.status_code == 200:
                     data = response.json()
-                    st.success("Analysis Complete")
-                    st.markdown("### Findings Report")
-                    st.markdown(data.get("report", "No report text received."))
+                    st.success("Analysis Complete!")
+
+                    # הצגת התוצאה הסופית של הסוכן
+                    final_report = data.get("report") or data.get("response") or data.get("result") or str(data)
+                    st.markdown("### Strategic Intelligence Dossier")
+                    st.markdown(final_report)
+
+                    # פירוט שלבים / נתונים נוספים אם קיימים בתשובה
+                    if "sources" in data or "retrieved_chunks" in data:
+                        with st.expander("Retrieved Context & Sources"):
+                            st.write(data.get("sources") or data.get("retrieved_chunks"))
+
                 else:
-                    st.error(f"API Error: Status {response.status_code}")
-            except Exception as e:
-                st.error(f"Connection Failed: {str(e)}")
+                    st.error(f"Error {response.status_code}: {response.text}")
+
+            except requests.exceptions.RequestException as e:
+                st.error(f"Connection Failed: {e}")

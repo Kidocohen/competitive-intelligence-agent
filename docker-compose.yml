@@ -1,13 +1,32 @@
 version: '3.8'
 
 services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n_local
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - agent_net
+    restart: unless-stopped
+
   agent-api:
     build: .
     container_name: competitive_intelligence_agent
     ports:
       - "5000:5000"
+    environment:
+      - N8N_WEBHOOK_URL=http://n8n_local:5678/webhook/market-intelligence
+    volumes:
+      - .:/app
     env_file:
       - .env
+    depends_on:
+      - n8n
+    networks:
+      - agent_net
     restart: unless-stopped
 
   agent-ui:
@@ -17,9 +36,21 @@ services:
     ports:
       - "8501:8501"
     environment:
-      - API_HOST=agent-api
+      - API_URL=http://agent-api:5000/api/research
+    volumes:
+      - .:/app
     env_file:
       - .env
     depends_on:
       - agent-api
+    networks:
+      - agent_net
     restart: unless-stopped
+
+networks:
+  agent_net:
+    driver: bridge
+
+volumes:
+  n8n_data:
+    external: true
