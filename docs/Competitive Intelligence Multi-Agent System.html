@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>System Specification - Competitive Intelligence</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; margin: 40px; color: #2d3748; }
+  h1 { color: #4a154b; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+  h2 { color: #2b6cb0; margin-top: 25px; border-bottom: 1px solid #edf2f7; padding-bottom: 5px; }
+  .author { font-size: 1.1em; color: #4a5568; margin-bottom: 30px; }
+  ul { padding-right: 20px; }
+  li { margin-bottom: 8px; }
+  code { background: #edf2f7; padding: 2px 6px; border-radius: 4px; font-family: Consolas, monospace; color: #c53030; direction: ltr; display: inline-block; }
+  .tool-box { background: #f7fafc; border-right: 4px solid #3182ce; padding: 12px; margin: 10px 0; border-radius: 4px; }
+  .prompt { font-family: Consolas, monospace; font-size: 0.9em; color: #2d3748; direction: ltr; text-align: left; }
+  .cmd-box { background: #1a202c; color: #68d391; padding: 10px 15px; border-radius: 6px; font-family: Consolas, monospace; direction: ltr; text-align: left; }
+</style>
+</head>
+<body>
+
+<h1>מסמך אפיון מערכת: Competitive Intelligence Multi-Agent System</h1>
+<div class="author"><strong>מוגש על ידי:</strong> עידו כהן</div>
+
+<h2>1. תיאור הבעיה והפתרון</h2>
+<p><strong>הבעיה:</strong> ארגונים נדרשים לאסוף, לנתח ולסנתז מידע עסקי ותחרותי (כגון שינויי תמחור, רכישות ואסטרטגיות מתחרים) ממקורות רבים ומפוזרים. התהליך הידני איטי, מועד לשגיאות וגוזל זמן יקר מאנליסטים.</p>
+<p><strong>הפתרון:</strong> מערכת אוטונומית מבוססת סוכנים (Multi-Agent System) המופעלת על גבי מנוע LangGraph. המערכת קולטת שאילתות מחקר, שולפת מידע רלוונטי ממסד נתונים וקטורי פנימי או ממקורות מידע בזמן אמת, מנתחת את התוכן ומפיקה דוחות מודיעין מדויקים. המערכת מאפשרת אינטגרציה אקטיבית למידע חיצוני באמצעות אוטומציה.</p>
+
+<h2>2. פירוט צמתים (Nodes) וזרימת המערכת</h2>
+<ul>
+  <li><strong>Input Guardrail (<code>input_guardrail</code>):</strong> משמש כשומר סף. מקבל את קלט המשתמש ומוודא שאינו מכיל ניסיונות הזרקת פרומפטים (Prompt Injection), שפה פוגענית או בקשות שחורגות מתחום המערכת. במידה והקלט תקין, הזרימה ממשיכה; אחרת, הבקשה נדחית.</li>
+  <li><strong>Agent Reasoning (<code>agent_reasoning</code>):</strong> המוח המרכזי של המערכת. מנסח שאילתות אסטרטגיות, מחליט איזו פעולה נדרשת, וקובע באילו כלים (Tools) עליו להשתמש כדי להשלים את המשימה.</li>
+  <li><strong>Tool Execution (<code>execute_tools</code>):</strong> צומת ביצועי המופעל בהתאם להחלטת ה-Reasoning Node. מפעיל שאילתות ל-Vector DB או קריאות Webhook חיצוניות ל-n8n, ומחזיר את התוצאות לגרף.</li>
+  <li><strong>Synthesizer (<code>synthesizer</code>):</strong> מרכז את כלל התצפיות (Observations) שהתקבלו מהכלים השונים, ומעבד אותן לכדי מסמך תובנות ברור, מובנה ומקצועי.</li>
+  <li><strong>Output Guardrail (<code>output_guardrail</code>):</strong> בקרת איכות על התוצר המוגמר. מוודא שאין זליגת מידע רגיש, שאין הזיות (Hallucinations) ושתוכן הדוח מגובה בעובדות שנשלפו.</li>
+</ul>
+
+<h2>3. אסטרטגיית RAG (Retrieval-Augmented Generation)</h2>
+<ul>
+  <li><strong>מסד נתונים וקטורי ומודל:</strong> שימוש ב-Qdrant Cloud בחישוב מרחק Cosine Similarity, מבוסס על מודל ההטמעה <code>text-embedding-3-small</code> של חברת OpenAI.</li>
+  <li><strong>נתונים:</strong> מסמך מקור פנימי המוזן ישירות מקובץ <code>internal_research_report.txt</code>.</li>
+  <li><strong>אסטרטגיית Chunking:</strong> חלוקת המסמכים מבוצעת באמצעות <code>RecursiveCharacterTextSplitter</code> עם מקטעים בגודל 500 תווים וחפיפה של 80 תווים לשמירה על הקשר רציף. בנוסף, מיושם חילוץ מטא-דאטה דינמי המזהה ומתייג את שם חברת המטרה מתוך הטקסט לטובת סינון וקטורי ממוקד.</li>
+</ul>
+
+<h2>4. פירוט האוטומציה (n8n) ושרת ה-Backend</h2>
+<ul>
+  <li><strong>שרת ה-Backend (Flask):</strong> עוטף את הגרף של LangGraph ורץ על פורט 5000. חושף Endpoint בנתיב <code>/query</code> המקבל JSON ומחזיר את התשובה ל-UI של Streamlit שרץ על פורט 8501.</li>
+  <li><strong>האוטומציה ב-n8n (Market Intelligence Dispatcher):</strong>
+    <ul>
+      <li><strong>Webhook Input:</strong> מאזין לבקשות POST בנתיב <code>/market-intelligence</code> ומקבל מהסוכן את שם החברה ושאילתת החיפוש.</li>
+      <li><strong>לוגיקה (Logic):</strong> צומת HTTP Request המבצע קריאת POST חיצונית למנוע החיפוש Tavily API (עד 3 תוצאות ממוקדות).</li>
+      <li><strong>Response:</strong> צומת Respond to Webhook מחזיר לסוכן תשובת JSON מובנית הכוללת סטטוס, ציון סנטימנט ומחרוזת מודיעין עדכנית.</li>
+    </ul>
+  </li>
+</ul>
+
+<h2>5. תיאור כלים (Tools)</h2>
+<div class="tool-box">
+  <strong>search_internal_intelligence:</strong>
+  <div class="prompt">"Search the internal competitive intelligence repository in Qdrant vector database. Use this tool FIRST to retrieve proprietary corporate dossiers, SWOT analyses, and confidential strategy notes. Optionally filter results by target company name."</div>
+</div>
+
+<div class="tool-box">
+  <strong>fetch_external_market_data:</strong>
+  <div class="prompt">"Trigger external market intelligence gathering via n8n automation webhook. Use this tool when internal intelligence is insufficient, or when fresh real-time web search and live market signals are required."</div>
+</div>
+
+<h2>6. סביבת הרצה (Docker)</h2>
+<p>המערכת כולה ארוזה בקונטיינרים דרך <code>docker-compose.yml</code>. להפעלת המערכת במלואה:</p>
+<div class="cmd-box">docker-compose up --build</div>
+<p>לאחר העלייה, ממשק המשתמש נגיש בכתובת: <code>http://localhost:8501</code>.</p>
+
+</body>
+</html>
