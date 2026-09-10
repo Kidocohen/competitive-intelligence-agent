@@ -11,7 +11,7 @@ st.set_page_config(
 API_URL = os.getenv("API_URL", "http://agent-api:5000/api/research")
 
 
-# פונקציית עזר לשליחת הודעה ל-Backend
+
 def send_message(user_text: str):
     st.session_state.messages.append({"role": "user", "content": user_text})
     with st.spinner("Analyzing intelligence sources..."):
@@ -91,7 +91,7 @@ with st.sidebar:
         ]
         st.rerun()
 
-# כותרת ראשית
+
 st.title("Competitive & Corporate Intelligence Agent")
 st.caption("Interactive Chat Interface backed by LangGraph, Qdrant Vector Store, and Live n8n Dispatcher")
 

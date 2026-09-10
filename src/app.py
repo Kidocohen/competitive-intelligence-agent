@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from langchain_core.messages import HumanMessage
 
-# הוספת תיקיית src לנתיב המערכת להבטחת ייבוא יציב
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from graph import app_graph
@@ -16,7 +16,6 @@ app = Flask(__name__)
 
 @app.route("/health", methods=["GET"])
 def health_check():
-    """נקודת בדיקת תקינות עבור סביבת העבודה והדוקר."""
     return jsonify({"status": "healthy", "service": "Competitive Intelligence Agent API"}), 200
 
 

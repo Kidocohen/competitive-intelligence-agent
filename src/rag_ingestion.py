@@ -11,7 +11,7 @@ load_dotenv()
 
 
 def build_cloud_vector_store():
-    # שלב 1: אימות קיומם של המפתחות הנדרשים
+
     openai_api_key = os.getenv("OPENAI_API_KEY")
     qdrant_url = os.getenv("QDRANT_URL")
     qdrant_api_key = os.getenv("QDRANT_API_KEY")
@@ -19,7 +19,7 @@ def build_cloud_vector_store():
     if not openai_api_key or not qdrant_url or not qdrant_api_key:
         raise ValueError("[ERROR] Missing required keys in .env: OPENAI_API_KEY, QDRANT_URL, or QDRANT_API_KEY")
 
-    # שלב 2: הגדרת נתיב הקובץ וטעינת מסמך המקור (תיקיית data לפי סעיף 5.1)
+
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_path = os.path.join(base_dir, "data", "internal_research_report.txt")
 
@@ -30,7 +30,7 @@ def build_cloud_vector_store():
     loader = TextLoader(data_path, encoding="utf-8")
     documents = loader.load()
 
-    # שלב 3: אסטרטגיית חלוקה למקטעים (Recursive Chunking - סעיף 4.2)
+
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=500,
         chunk_overlap=80,
@@ -39,13 +39,13 @@ def build_cloud_vector_store():
     chunks = text_splitter.split_documents(documents)
     print(f"[RAG] Document partitioned into {len(chunks)} contextual chunks.")
 
-    # שלב 4: אתחול מודל הטמעה (Embedding)
+
     embeddings = OpenAIEmbeddings(
         model="text-embedding-3-small",
         openai_api_key=openai_api_key
     )
 
-    # שלב 5: חיבור ישיר ל-Qdrant ויצירת האוסף מחדש
+
     collection_name = "competitive_intelligence"
     print(f"[RAG] Connecting to Qdrant at: {qdrant_url}")
 
@@ -54,7 +54,7 @@ def build_cloud_vector_store():
         api_key=qdrant_api_key
     )
 
-    # יצירה מחדש של האוסף עם וקטור בגודל 1536 (התואם ל-text-embedding-3-small)
+
     client.recreate_collection(
         collection_name=collection_name,
         vectors_config=qmodels.VectorParams(
@@ -63,7 +63,7 @@ def build_cloud_vector_store():
         )
     )
 
-    # שלב 6: הטמעת מקטעים ויצירת נקודות עם Payload מותאם (סעיף 4.2)
+
     print(f"[RAG] Generating embeddings and uploading to '{collection_name}'...")
     points = []
 
@@ -71,7 +71,7 @@ def build_cloud_vector_store():
         content = chunk.page_content
         vector = embeddings.embed_query(content)
 
-        # זיהוי חברת מטרה מתוך התוכן לתמיכה ב-Metadata Filtering
+
         target_company = "AlphaCorp" if "alphacorp" in content.lower() else "General Corporate"
 
         point = qmodels.PointStruct(

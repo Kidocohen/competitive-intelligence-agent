@@ -14,38 +14,36 @@ from tools import system_tools
 load_dotenv()
 
 
-# ==========================================
-# 1. הגדרת מבנה ה-State של הגרף
-# ==========================================
+
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
     is_safe: bool
     iteration_count: int
 
 
-# אתחול מודל השפה המרכזי
+
 llm = ChatOpenAI(
     model="gpt-4o-mini",
     temperature=0.2,
     openai_api_key=os.getenv("OPENAI_API_KEY")
 )
 
-# מודל מהיר וייעודי לסינון שאלות לא רלוונטיות (Guardrail Classifier)
+
 guardrail_llm = ChatOpenAI(
     model="gpt-4o-mini",
     temperature=0.0,
     openai_api_key=os.getenv("OPENAI_API_KEY")
 )
 
-# חיבור הכלים למודל המרכזי
+
 llm_with_tools = llm.bind_tools(system_tools)
 
 
-# ==========================================
-# 2. מימוש חמשת הצמתים (Nodes)
-# ==========================================
 
-# צומת 1: Input Guardrail עם אימות תחום עסקי קפדני (סעיף 4.1)
+#מימוש חמשת הצמתים
+
+# 1
+
 def input_guardrail_node(state: AgentState):
     """
     בודק האם הקלט קשור למודיעין עסקי, חברות, מתחרים או מידע ארגוני פנימי.
@@ -59,7 +57,7 @@ def input_guardrail_node(state: AgentState):
             "is_safe": False
         }
 
-    # 1. מניעת הזרקת פקודות (Prompt Injection)
+
     forbidden_keywords = ["ignore previous instructions", "drop table", "bypass system prompt"]
     if any(keyword in last_message.lower() for keyword in forbidden_keywords):
         return {
@@ -67,7 +65,7 @@ def input_guardrail_node(state: AgentState):
             "is_safe": False
         }
 
-    # 2. סיווג תחום (Scope & Relevance Classification)
+
     relevance_prompt = (
         "You are an intake filter for an Elite Competitive Intelligence and Corporate Research Agent.\n"
         "Your task is to determine whether the user query belongs to the domain of: "
@@ -96,7 +94,7 @@ def input_guardrail_node(state: AgentState):
     return {"is_safe": True, "iteration_count": 0}
 
 
-# צומת 2: Research Planner (סעיף 4.1)
+# 2
 def research_planner_node(state: AgentState):
     """בונה הנחיית מערכת ומגדיר את אסטרטגיית איסוף המודיעין."""
     planner_prompt = SystemMessage(
@@ -112,7 +110,7 @@ def research_planner_node(state: AgentState):
     return {"messages": [planner_prompt]}
 
 
-# צומת 3: Agent Reasoning (ReAct Loop - סעיף 4.1)
+#3
 def agent_reasoning_node(state: AgentState):
     """מפעיל את מודל השפה לקבלת החלטה: קריאה לכלי או ניסוח מסקנה."""
     current_count = state.get("iteration_count", 0) + 1
@@ -120,11 +118,11 @@ def agent_reasoning_node(state: AgentState):
     return {"messages": [response], "iteration_count": current_count}
 
 
-# צומת 4: Tool Execution (סעיף 4.1)
+# 4
 tool_node = ToolNode(system_tools)
 
 
-# צומת 5: Output Guardrail (אימות איכות, שלמות ומניעת הזיות - סעיף 4.1)
+# 5
 def output_guardrail_node(state: AgentState):
     """
     מוודא שהתשובה הסופית:
@@ -135,12 +133,12 @@ def output_guardrail_node(state: AgentState):
     last_message = state["messages"][-1]
     content = last_message.content
 
-    # בדיקה 1: שלמות ועומק תוכן מינימלי
+
     if not content or len(content.strip()) < 50:
         warning_suffix = "\n\n[Warning: Generated report lacks sufficient analytical depth.]"
         return {"messages": [AIMessage(content=content + warning_suffix)]}
 
-    # בדיקה 2: מניעת דליפת תבניות שבורות או ביטויים לא מפוענחים
+
     raw_artifacts = ["{{", "}}", "undefined", "[object Object]"]
     if any(artifact in content for artifact in raw_artifacts):
         cleaned_content = content
@@ -148,14 +146,13 @@ def output_guardrail_node(state: AgentState):
             cleaned_content = cleaned_content.replace(artifact, "")
         content = cleaned_content + "\n\n[Notice: Output sanitized by Output Guardrail.]"
 
-    # בדיקה 3: אימות ביסוס עובדתי (Hallucination Detection)
-    # איתור האם הכלים (Qdrant / n8n Tavily) החזירו נתונים במהלך הריצה
+
     has_tool_context = any(
         getattr(m, "type", "") == "tool" or hasattr(m, "tool_call_id")
         for m in state["messages"]
     )
 
-    # אם הופעלו כלים, נוודא שהדוח מכיל עוגנים עובדתיים מהמידע שנאסף
+
     if has_tool_context:
         evidence_indicators = [
             "market", "intelligence", "revenue", "source",
@@ -168,9 +165,7 @@ def output_guardrail_node(state: AgentState):
     return {"messages": [AIMessage(content=content)]}
 
 
-# ==========================================
-# 3. ניתוב מותנה (Conditional Edges)
-# ==========================================
+# conditional edges
 
 def route_after_input_guardrail(state: AgentState):
     """אם הקלט סווג כ-OFF_TOPIC או לא בטוח, מסיים מיד."""
@@ -183,7 +178,6 @@ def route_agent_decision(state: AgentState):
     """בודק אם הסוכן ביקש לקרוא לכלי או שסיים את מחקרו."""
     last_message = state["messages"][-1]
 
-    # הגנה מלולאה אינסופית
     if state.get("iteration_count", 0) >= 5:
         return "output_guardrail"
 
@@ -193,9 +187,9 @@ def route_agent_decision(state: AgentState):
     return "output_guardrail"
 
 
-# ==========================================
-# 4. הרכבת הגרף (StateGraph Construction)
-# ==========================================
+
+# הגרף
+
 
 workflow = StateGraph(AgentState)
 
@@ -233,9 +227,9 @@ workflow.add_edge("output_guardrail", END)
 app_graph = workflow.compile()
 
 
-# ==========================================
-# 5. בדיקה עצמאית והפקת ויזואליזציה (סעיף 5.2)
-# ==========================================
+
+# בדיקה והפקת ויזואליזציה
+
 if __name__ == "__main__":
     print("=== Testing Competitive Intelligence LangGraph ===")
 

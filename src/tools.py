@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# הגדרות תקשורת מול n8n ו-Qdrant
+
 N8N_WEBHOOK_URL = os.getenv(
     "N8N_WEBHOOK_URL",
     "http://n8n_local:5678/webhook/market-intelligence"
@@ -19,7 +19,7 @@ QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", None)
 COLLECTION_NAME = "competitive_intelligence"
 
-# אתחול קליינטים מרכזיים (Singleton) לחיסכון במשאבים
+
 embeddings_model = OpenAIEmbeddings(model="text-embedding-3-small")
 qdrant_client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
 
@@ -34,7 +34,7 @@ def search_internal_intelligence(query: str, company_filter: Optional[str] = Non
     try:
         query_vector = embeddings_model.embed_query(query)
 
-        # תמיכה בסינון מטא-דאטה מתקדם לפי סעיף 4.2
+
         query_filter = None
         if company_filter:
             query_filter = qmodels.Filter(
@@ -106,5 +106,5 @@ def fetch_external_market_data(company: str, query: str = "Latest market intelli
         return f"Failed to contact external n8n automation service: {str(e)}"
 
 
-# רשימת הכלים לחשיפה עבור סוכן ה-LangGraph
+
 system_tools = [search_internal_intelligence, fetch_external_market_data]
