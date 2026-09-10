@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>מצגת אפיון מערכת - עידו כהן</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e9ecef;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .slide {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 50px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            page-break-after: always;
+            min-height: 500px;
+            position: relative;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+            font-size: 32px;
+        }
+        h2 {
+            color: #2980b9;
+            font-size: 26px;
+        }
+        ul {
+            line-height: 1.8;
+            font-size: 20px;
+        }
+        li {
+            margin-bottom: 12px;
+        }
+        .speaker-notes {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-right: 5px solid #f39c12;
+            margin-top: 30px;
+            font-size: 18px;
+            color: #555;
+        }
+        .speaker-notes strong {
+            color: #e67e22;
+        }
+        @media print {
+            body { background-color: #fff; padding: 0; }
+            .slide { box-shadow: none; border-radius: 0; margin-bottom: 0; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- שקף 1 -->
+    <div class="slide">
+        <h1>Competitive Intelligence Multi-Agent System</h1>
+        <h2>מגיש: עידו כהן</h2>
+        <ul>
+            <li><strong>מהות הפרויקט:</strong> מערכת אוטונומית מבוססת סוכנים (Multi-Agent System) לאיסוף, ניתוח וסיכום של מודיעין תחרותי.</li>
+            <li><strong>הפתרון הטכנולוגי:</strong> מנוע LangGraph המנהל תהליך מחקר מלא - החל משליפת נתונים ועד הפקת דוח אסטרטגי.</li>
+            <li><strong>ערך עסקי:</strong> אוטומציה של תהליכים ידניים, חיסכון בזמן אנליסטים, ומזעור טעויות אנוש באיסוף נתונים.</li>
+        </ul>
+        <div class="speaker-notes">
+            <strong>הערת דובר:</strong> "בניתי את המערכת מתוך הבנה שארגונים טובעים במידע. המערכת מחליפה את החיפוש הידני בסוכן חכם שיודע לתכנן מחקר, להפעיל כלים ולספק שורת מחץ אסטרטגית."
+        </div>
+    </div>
+
+    <!-- שקף 2 -->
+    <div class="slide">
+        <h1>ארכיטקטורת המערכת (5 Nodes)</h1>
+        <ul>
+            <li><strong>1. Input Guardrail:</strong> שומר סף הקולט את השאילתה, מסנן נושאים לא רלוונטיים וחוסם ניסיונות הזרקת פרומפטים (Prompt Injections).</li>
+            <li><strong>2. Research Planner:</strong> מתכנן המחקר. בונה מראש את אסטרטגיית איסוף המודיעין ומגדיר לסוכן את חוקי העבודה.</li>
+            <li><strong>3. Agent Reasoning:</strong> המוח המרכזי. מחליט איזה כלי להפעיל, מנתח את התוצאות, ובסיום <strong>מסנתז ומסכם</strong> את המידע לדוח הסופי.</li>
+            <li><strong>4. Tool Execution:</strong> הזרוע הביצועית המפעילה בפועל את חיפושי המסד וה-Webhooks.</li>
+            <li><strong>5. Output Guardrail:</strong> בקרת האיכות הסופית. מוודאת שעומק התוכן מספק, שאין שאריות קוד, ושהדוח מגובה בעובדות (מניעת Hallucinations).</li>
+        </ul>
+    </div>
+
+    <!-- שקף 3 -->
+    <div class="slide">
+        <h1>אסטרטגיית RAG ועיבוד נתונים</h1>
+        <ul>
+            <li><strong>מסד נתונים וקטורי:</strong> אינטגרציה מול Qdrant לאחסון סודי של דוחות מודיעין פנימיים.</li>
+            <li><strong>אסטרטגיית חיתוך (Chunking):</strong> חלוקת מסמכי מקור באמצעות <code>RecursiveCharacterTextSplitter</code> למקטעים של 500 תווים, עם חפיפה של 80 תווים לשמירה על הקשר רציף.</li>
+            <li><strong>מודל הטמעה (Embeddings):</strong> מודל <code>text-embedding-3-small</code> של OpenAI, המייצר וקטורים של 1536 ממדים.</li>
+            <li><strong>חישוב מרחק וסינון:</strong> שימוש ב-Cosine Similarity, בשילוב חילוץ Metadata דינמי המאפשר לסנן תוצאות לפי שם חברת המטרה.</li>
+        </ul>
+        <div class="speaker-notes">
+            <strong>הערת דובר:</strong> "בחרתי בחפיפה של 80 תווים בחיתוך הטקסט כדי להבטיח שמשפטים ורעיונות עסקיים קריטיים לא ייחתכו באמצע, מה שמבטיח שליפה סמנטית סופר-מדויקת מ-Qdrant."
+        </div>
+    </div>
+
+    <!-- שקף 4 -->
+    <div class="slide">
+        <h1>אוטומציה וכלים חיצונים (n8n)</h1>
+        <ul>
+            <li><strong>ארגז כלים כפול:</strong> שימוש ב-<code>search_internal_intelligence</code> למידע ארגוני מסווג, וב-<code>fetch_external_market_data</code> למודיעין זמן אמת.</li>
+            <li><strong>Microservices באמצעות n8n:</strong> המערכת פונה לשרת אוטומציה חיצוני המאזין ל-Webhook (בנתיב <code>/market-intelligence</code>).</li>
+            <li><strong>לוגיקת חיפוש:</strong> הפעלת מנוע Tavily בזמן אמת לאיסוף חדשות חמות ועדכוני שוק.</li>
+            <li><strong>העשרת נתונים (Enrichment):</strong> ה-Payload שחוזר מהאוטומציה כולל לא רק את המידע, אלא גם ציון סנטימנט המקל על ניתוח המגמה.</li>
+        </ul>
+    </div>
+
+    <!-- שקף 5 -->
+    <div class="slide">
+        <h1>סביבת הרצה (Deployment)</h1>
+        <ul>
+            <li><strong>קונטיינרים:</strong> המערכת ארוזה ומבודדת לחלוטין באמצעות <code>docker-compose.yml</code> להבטחת עבודה יציבה בכל סביבה.</li>
+            <li><strong>Backend (Flask):</strong> שרת עוטף הרץ על פורט <strong>5000</strong>, מנהל את ה-LangGraph ומספק גישה דרך נתיב <code>/api/research</code>.</li>
+            <li><strong>Frontend (Streamlit):</strong> ממשק לקוח אינטראקטיבי הרץ על פורט <strong>8501</strong>, ומאפשר חוויית שיחה חלקה מול הסוכן.</li>
+            <li><strong>הרצה פשוטה:</strong> הקמת כל סביבת הפרודקשן מבוצעת באמצעות פקודה בודדת: <code>docker-compose up --build</code>.</li>
+        </ul>
+    </div>
+
+</body>
+</html>
